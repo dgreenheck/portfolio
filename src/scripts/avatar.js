@@ -18,13 +18,14 @@ function setupScene(gltf) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-  renderer.setSize(600, 600);
+  renderer.setSize(getMaxWidth(), getMaxHeight());
   renderer.setPixelRatio(window.devicePixelRatio);
 
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-  document.getElementById('avatar-container').appendChild(renderer.domElement);
+  const container = document.getElementById('avatar-container');
+  container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
 
@@ -46,7 +47,7 @@ function setupScene(gltf) {
   const action = mixer.clipAction(clip);
   action.play();
 
-  const camera = new THREE.PerspectiveCamera(45, 1, 1, 1000);
+  const camera = new THREE.PerspectiveCamera(45, getMaxWidth() / getMaxHeight());
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
@@ -81,6 +82,12 @@ function setupScene(gltf) {
   keyLight.castShadow = true;
   scene.add(keyLight);
 
+  window.addEventListener('resize', () => {
+    camera.aspect = getMaxWidth() / getMaxHeight();
+    camera.updateProjectionMatrix();
+    renderer.setSize(getMaxWidth(), getMaxHeight());
+  });
+  
   const clock = new THREE.Clock();
   function animate() {
     requestAnimationFrame(animate);
@@ -90,4 +97,13 @@ function setupScene(gltf) {
   }
   
   animate();
+}
+
+function getMaxWidth() {
+  const container = document.getElementById('avatar-container');
+  return Math.min(600, container.offsetWidth);
+}
+
+function getMaxHeight() {
+  return 500;
 }
