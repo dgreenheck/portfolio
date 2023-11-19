@@ -97,7 +97,18 @@ function setupScene(gltf) {
   });
 
   let isStumbling = false;
-  window.addEventListener('mousedown', (ev) => {
+  window.addEventListener('mousedown', (ev) => triggerAvatarStumble(ev))
+  window.addEventListener('touchstart', (ev) => triggerAvatarStumble(ev))
+  
+  const clock = new THREE.Clock();
+  function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    mixer.update(clock.getDelta());
+    renderer.render(scene, camera);
+  }
+  
+  function triggerAvatarStumble(ev) {
     const coords = {
       x: (ev.clientX / window.innerWidth) * 2 - 1,
       y: -(ev.clientY / window.innerHeight) * 2 + 1
@@ -127,16 +138,8 @@ function setupScene(gltf) {
         setTimeout(() => isStumbling = false, 1000);
       }, 4000)
     }
-  })
-  
-  const clock = new THREE.Clock();
-  function animate() {
-    requestAnimationFrame(animate);
-    controls.update();
-    mixer.update(clock.getDelta());
-    renderer.render(scene, camera);
   }
-  
+
   animate();
 }
 
