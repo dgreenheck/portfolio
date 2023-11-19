@@ -5,11 +5,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 const loader = new GLTFLoader().setPath('/models/');
 loader.load('me.glb', (gltf) => {
   setupScene(gltf);
-  document.getElementById('progress-container').style.display = 'none';
+  document.getElementById('avatar-loading').style.display = 'none';
 }, (xhr) => {
   const percentCompletion = (xhr.loaded / xhr.total) * 100;
   console.log(`Loading model... ${percentCompletion}%`);
-  document.getElementById('progress').innerHTML = `LOADING ${percentCompletion}/100`;
 }, (error) => {
   console.log(error);
 });
