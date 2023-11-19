@@ -14,6 +14,7 @@ loader.load('me.glb', (gltf) => {
 });
 
 function setupScene(gltf) {
+  // RENDERER
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
@@ -28,25 +29,9 @@ function setupScene(gltf) {
 
   const scene = new THREE.Scene();
 
-  const mesh = gltf.scene;
-  mesh.traverse((child) => {
-    if (child.isMesh) {
-      child.castShadow = true;
-      child.receiveShadow = true;
-    }
-  });
-  scene.add(mesh);
-
-  // Create an AnimationMixer, and get the list of AnimationClip instances
-  const mixer = new THREE.AnimationMixer(mesh);
-  const clips = gltf.animations;
-
-  // Play a specific animation
-  const clip = THREE.AnimationClip.findByName(clips, 'Armature_1|mixamo.com|Layer0');
-  const action = mixer.clipAction(clip);
-  action.play();
-
+  // CAMERRA CONTROLS
   const camera = new THREE.PerspectiveCamera(45, getMaxWidth() / getMaxHeight());
+  camera.position.y = 1;
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
@@ -59,6 +44,25 @@ function setupScene(gltf) {
   controls.target = new THREE.Vector3(0, 1, 0);
   controls.update();
 
+  const raycaster = new THREE.Raycaster();
+  
+  // LIGHTING
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+  scene.add(ambientLight);
+
+  const spotlight = new THREE.SpotLight(0xffffff, 20, 8, 0.2);
+  spotlight.penumbra = 0.5;
+  spotlight.position.set(0, 5, 0);
+  spotlight.castShadow = true;
+  scene.add(spotlight);
+
+  const keyLight = new THREE.DirectionalLight(0xffffff, 2);
+  keyLight.position.set(1, 1, 2);
+  keyLight.lookAt(new THREE.Vector3());
+  scene.add(keyLight);
+
+  // MESHES
+  // Create pedestal
   const groundGeometry = new THREE.CylinderGeometry(0.7, 0.7, 0.2, 64);
   const groundMaterial = new THREE.MeshStandardMaterial();
   const groundMesh = new THREE.Mesh(groundGeometry, groundMaterial);
@@ -67,25 +71,63 @@ function setupScene(gltf) {
   groundMesh.position.y -= 0.1;
   scene.add(groundMesh);
 
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
-  scene.add(ambientLight);
+  // Load avatar
+  const avatar = gltf.scene;
+  avatar.traverse((child) => {
+    if (child.isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+  scene.add(avatar);
 
-  const spotlight = new THREE.SpotLight(0xffffff, 20, 8, 0.15);
-  spotlight.penumbra = 0.5;
-  spotlight.position.set(0, 5, 0);
-  scene.add(spotlight);
-
-  const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
-  keyLight.position.set(1, 1, 2);
-  keyLight.lookAt(new THREE.Vector3());
-  keyLight.castShadow = true;
-  scene.add(keyLight);
+  // ANIMATION
+  const mixer = new THREE.AnimationMixer(avatar);
+  const clips = gltf.animations;
+  const waveClip = THREE.AnimationClip.findByName(clips, 'wave');
+  const stumbleClip = THREE.AnimationClip.findByName(clips, 'stumble');
+  const waveAction = mixer.clipAction(waveClip);
+  const stumbleAction = mixer.clipAction(stumbleClip);
+  waveAction.play();
 
   window.addEventListener('resize', () => {
     camera.aspect = getMaxWidth() / getMaxHeight();
     camera.updateProjectionMatrix();
     renderer.setSize(getMaxWidth(), getMaxHeight());
   });
+
+  let isStumbling = false;
+  window.addEventListener('mousedown', (ev) => {
+    const coords = {
+      x: (ev.clientX / window.innerWidth) * 2 - 1,
+      y: -(ev.clientY / window.innerHeight) * 2 + 1
+    };
+
+    raycaster.setFromCamera(coords, camera);
+
+    const intersections = raycaster.intersectObject(avatar);
+
+    if (intersections.length > 0) {
+      // If avatar is already stumbling, exit early
+      if (isStumbling) return;
+
+      // Fade in the stumble animation
+      isStumbling = true;
+      stumbleAction.reset();
+      stumbleAction.play();
+      waveAction.crossFadeTo(stumbleAction, 0.3);
+
+      // Wait two seconds to fade the waving animation back in
+      setTimeout(() => {
+        waveAction.reset();
+        waveAction.play();
+        stumbleAction.crossFadeTo(waveAction, 1)
+
+        // Wait a bit before we allow the avatar to stumble again
+        setTimeout(() => isStumbling = false, 1000);
+      }, 4000)
+    }
+  })
   
   const clock = new THREE.Clock();
   function animate() {
@@ -100,7 +142,7 @@ function setupScene(gltf) {
 
 function getMaxWidth() {
   const container = document.getElementById('avatar-container');
-  return Math.min(600, container.offsetWidth);
+  return container.offsetWidth;
 }
 
 function getMaxHeight() {
