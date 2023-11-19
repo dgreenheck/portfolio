@@ -109,6 +109,9 @@ function setupScene(gltf) {
   }
   
   function triggerAvatarStumble(ev) {
+    ev.stopPropagation();
+    ev.preventDefault();
+
     const coords = {
       x: (ev.clientX / window.innerWidth) * 2 - 1,
       y: -(ev.clientY / window.innerHeight) * 2 + 1
