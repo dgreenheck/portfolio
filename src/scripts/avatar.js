@@ -36,11 +36,10 @@ function setupScene(gltf) {
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.enablePan = false;
+  controls.enableZoom = false;
   controls.minDistance = 3.75;
-  controls.maxDistance = 10;
   controls.minPolarAngle = 0;
   controls.maxPolarAngle = 1.5;
-  controls.autoRotate = false;
   controls.target = new THREE.Vector3(0, 0.75, 0);
   controls.update();
 
