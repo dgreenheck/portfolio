@@ -31,28 +31,28 @@ function setupScene(gltf) {
 
   // CAMERRA CONTROLS
   const camera = new THREE.PerspectiveCamera(45, getMaxWidth() / getMaxHeight());
-  camera.position.y = 1;
+  camera.position.y = 0.1;
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.enablePan = false;
-  controls.minDistance = 4;
+  controls.minDistance = 3.75;
   controls.maxDistance = 10;
-  controls.minPolarAngle = 0.5;
+  controls.minPolarAngle = 0;
   controls.maxPolarAngle = 1.5;
   controls.autoRotate = false;
-  controls.target = new THREE.Vector3(0, 1, 0);
+  controls.target = new THREE.Vector3(0, 0.75, 0);
   controls.update();
 
   const raycaster = new THREE.Raycaster();
   
   // LIGHTING
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
   scene.add(ambientLight);
 
   const spotlight = new THREE.SpotLight(0xffffff, 20, 8, 0.2);
   spotlight.penumbra = 0.5;
-  spotlight.position.set(0, 5, 0);
+  spotlight.position.set(0, 5, 2);
   spotlight.castShadow = true;
   scene.add(spotlight);
 
@@ -90,16 +90,8 @@ function setupScene(gltf) {
   const stumbleAction = mixer.clipAction(stumbleClip);
   waveAction.play();
 
-  window.addEventListener('resize', () => {
-    camera.aspect = getMaxWidth() / getMaxHeight();
-    camera.updateProjectionMatrix();
-    renderer.setSize(getMaxWidth(), getMaxHeight());
-  });
-
   let isStumbling = false;
-  window.addEventListener('mousedown', (ev) => triggerAvatarStumble(ev))
-  window.addEventListener('touchstart', (ev) => triggerAvatarStumble(ev))
-  
+
   const clock = new THREE.Clock();
   function animate() {
     requestAnimationFrame(animate);
@@ -108,15 +100,7 @@ function setupScene(gltf) {
     renderer.render(scene, camera);
   }
   
-  function triggerAvatarStumble(ev) {
-    ev.stopPropagation();
-    ev.preventDefault();
-
-    const coords = {
-      x: (ev.clientX / window.innerWidth) * 2 - 1,
-      y: -(ev.clientY / window.innerHeight) * 2 + 1
-    };
-
+  function triggerAvatarStumble(coords) {
     raycaster.setFromCamera(coords, camera);
 
     const intersections = raycaster.intersectObject(avatar);
@@ -142,6 +126,32 @@ function setupScene(gltf) {
       }, 4000)
     }
   }
+
+  window.addEventListener('mousedown', (ev) => {
+    const coords = {
+      x: (ev.clientX / window.innerWidth) * 2 - 1,
+      y: -(ev.clientY / window.innerHeight) * 2 + 1
+    };
+    triggerAvatarStumble(coords)
+  });
+
+  window.addEventListener('touchstart', (ev) => {
+    // This prevents 'mousedown' from firing as well
+    ev.preventDefault();
+    if (ev.touches.length > 0) {
+      const coords = {
+        x: (ev.touches[0].clientX / window.innerWidth) * 2 - 1,
+        y: -(ev.touches[0].clientY / window.innerHeight) * 2 + 1
+      };
+      triggerAvatarStumble(coords)
+    }
+  }, { passive: false });
+  
+  window.addEventListener('resize', () => {
+    camera.aspect = getMaxWidth() / getMaxHeight();
+    camera.updateProjectionMatrix();
+    renderer.setSize(getMaxWidth(), getMaxHeight());
+  });
 
   animate();
 }
